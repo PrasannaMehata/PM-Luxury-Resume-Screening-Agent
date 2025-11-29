@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FarmX - Farmer's Portal</title>
+
+    <!-- Firebase COMPAT SDKs (old syntax support) -->
+    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-database-compat.js"></script>
+
+    <style>
+        :root {
+            --primary: #2e7d32;
+            --secondary: #1b5e20;
+            --success: #4caf50;
+            --accent: #ff9800;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
+                url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2000&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Background Animation Elements */
+        .floating-leaf {
+            position: absolute;
+            opacity: 0.7;
+            z-index: -1;
+            animation: float 15s infinite linear;
+        }
+
+        .leaf1 {
+            width: 40px;
+            height: 40px;
+            top: 10%;
+            left: 5%;
+            animation-delay: 0s;
+        }
+
+        .leaf2 {
+            width: 30px;
+            height: 30px;
+            top: 20%;
+            right: 10%;
+            animation-delay: 3s;
+        }
+
+        .leaf3 {
+            width: 35px;
+            height: 35px;
+            bottom: 15%;
+            left: 15%;
+            animation-delay: 6s;
+        }
+
+        .leaf4 {
+            width: 25px;
+            height: 25px;
+            bottom: 25%;
+            right: 5%;
+            animation-delay: 9s;
+        }
+
+        .sun {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            top: 10%;
+            right: 10%;
+            background: radial-gradient(circle, #ffeb3b, #ff9800);
+            border-radius: 50%;
+            box-shadow: 0 0 30px #ff9800;
+            z-index: -1;
+            animation: pulse 4s infinite alternate;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-20px) rotate(180deg);
+            }
+
+            100% {
+                transform: translateY(0) rotate(360deg);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            animation: fadeIn 0.5s ease-out;
+            backdrop-filter: blur(5px);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .background-control {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .background-control:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--light);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--gray);
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom: 3px solid var(--primary);
+            background: white;
+        }
+
+        .form-container {
+            padding: 30px;
+        }
+
+        .form {
+            display: none;
+        }
+
+        .form.active {
+            display: block;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5ee;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.2);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        .btn-google {
+            background: white;
+            color: var(--dark);
+            border: 2px solid #e1e5ee;
+            margin-top: 15px;
+        }
+
+        .btn-google:hover {
+            background: #f5f5f5;
+            border-color: var(--gray);
+        }
+
+        .google-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 20px 0;
+            position: relative;
+            color: var(--gray);
+        }
+
+        .divider::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e1e5ee;
+            z-index: 1;
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 15px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .forgot-password {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .forgot-password a {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+
+        #message {
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .popup-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            animation: popIn 0.4s ease-out;
+        }
+
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .popup h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .popup p {
+            margin-bottom: 20px;
+            color: var(--dark);
+        }
+
+        .popup-btn {
+            padding: 10px 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .popup-btn:hover {
+            background: var(--secondary);
+        }
+
+        /* CAPTCHA Styles */
+        .captcha-container {
+            background: #f9f9f9;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            border: 1px solid #e1e5ee;
+        }
+
+        .captcha-checkbox {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .captcha-box {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .captcha-box.checked {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .captcha-box.checked::after {
+            content: "✓";
+            color: white;
+            font-weight: bold;
+        }
+
+        .captcha-text {
+            display: flex;
+            align-items: center;
+        }
+
+        .captcha-icon {
+            margin-right: 10px;
+            color: var(--primary);
+        }
+
+        /* Password Reset Form */
+        .reset-instructions {
+            background: #e8f5e9;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: var(--dark);
+        }
+
+        /* Update Password Form */
+        .update-password-form {
+            display: none;
+        }
+
+        /* Background Settings Modal */
+        .bg-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            display: none;
+        }
+
+        .bg-modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .bg-modal h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .bg-input-group {
+            margin-bottom: 20px;
+        }
+
+        .bg-input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .bg-input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .bg-preview {
+            width: 100%;
+            height: 150px;
+            background-size: cover;
+            background-position: center;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 2px dashed #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+        }
+
+        .bg-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .bg-actions button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .bg-apply {
+            background: var(--primary);
+            color: white;
+        }
+
+        .bg-reset {
+            background: #f0f0f0;
+            color: var(--dark);
+        }
+
+        .bg-close {
+            background: #f44336;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Background Animation Elements -->
+    <div class="sun"></div>
+    <div class="floating-leaf leaf1">🍃</div>
+    <div class="floating-leaf leaf2">🍃</div>
+    <div class="floating-leaf leaf3">🍃</div>
+    <div class="floating-leaf leaf4">🍃</div>
+    <div class="floating-leaf leaf4">🍃</div>
+    <div class="floating-leaf leaf4">🍃</div>
+    <div class="floating-leaf leaf4">🍃</div>
+
+
+
+    <div class="floating-leaf leaf4">🍃</div>
+
+
+    <div class="container">
+        <div class="header">
+          
+            <h1>🎯PM luxury Resume Screening Agent</h1>
+            <button class="background-control" onclick="openBgModal()">🌅</button>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" data-tab="login">Login</div>
+            <div class="tab" data-tab="signup">Sign Up</div>
+        </div>
+
+        <div class="form-container">
+            <!-- Login Form -->
+            <div class="form active" id="login-form">
+                <h2>Welcome Back!</h2>
+                <div class="input-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" placeholder="Enter your email">
+                </div>
+                <div class="input-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password">
+                </div>
+
+                <!-- CAPTCHA for Login -->
+                <div class="captcha-container">
+                    <div class="captcha-checkbox" id="loginCaptcha">
+                        <div class="captcha-box"></div>
+                        <div class="captcha-text">
+                            <div class="captcha-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1ZM19 11C19 15.52 16.02 19.69 12 20.93C7.98 19.69 5 15.52 5 11V6.3L12 3.19L19 6.3V11Z"
+                                        fill="currentColor" />
+                                    <path d="M11 7H13V9H11V7ZM11 11H13V17H11V11Z" fill="currentColor" />
+                                </svg>
+                            </div>
+                            <span>I'm not a robot</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="login()">Login</button>
+
+                <div class="divider"><span>OR</span></div>
+
+                <button class="btn btn-google" onclick="googleSignIn()">
+                    <svg class="google-icon" viewBox="0 0 24 24" width="24" height="24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                            fill="#4285F4" />
+                        <path
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                            fill="#34A853" />
+                        <path
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                            fill="#FBBC05" />
+                        <path
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                            fill="#EA4335" />
+                    </svg>
+                    Sign in with Google
+                </button>
+
+                <div class="forgot-password">
+                    <a href="#" onclick="showForgotPassword()">Forgot your password?</a>
+                </div>
+            </div>
+
+            <!-- Signup Form -->
+            <div class="form" id="signup-form">
+                <h2>Create Account</h2>
+                <div class="input-group">
+                    <label for="signupName">Full Name</label>
+                    <input type="text" id="signupName" placeholder="Enter your full name">
+                </div>
+                <div class="input-group">
+                    <label for="signupEmail">Email</label>
+                    <input type="email" id="signupEmail" placeholder="Enter your email">
+                </div>
+                <div class="input-group">
+                    <label for="signupPassword">Password</label>
+                    <input type="password" id="signupPassword" placeholder="Create a password">
+                </div>
+
+                <!-- CAPTCHA for Signup -->
+                <div class="captcha-container">
+                    <div class="captcha-checkbox" id="signupCaptcha">
+                        <div class="captcha-box"></div>
+                        <div class="captcha-text">
+                            <div class="captcha-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1ZM19 11C19 15.52 16.02 19.69 12 20.93C7.98 19.69 5 15.52 5 11V6.3L12 3.19L19 6.3V11Z"
+                                        fill="currentColor" />
+                                    <path d="M11 7H13V9H11V7ZM11 11H13V17H11V11Z" fill="currentColor" />
+                                </svg>
+                            </div>
+                            <span>I'm not a robot</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="signup()">Sign Up</button>
+
+                <div class="divider"><span>OR</span></div>
+
+                <button class="btn btn-google" onclick="googleSignIn()">
+                    <svg class="google-icon" viewBox="0 0 24 24" width="24" height="24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                            fill="#4285F4" />
+                        <path
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                            fill="#34A853" />
+                        <path
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                            fill="#FBBC05" />
+                        <path
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                            fill="#EA4335" />
+                    </svg>
+                    Sign up with Google
+                </button>
+            </div>
+
+            <!-- Forgot Password Form -->
+            <div class="form" id="forgot-password-form">
+                <h2>Reset Password</h2>
+                <div class="reset-instructions">
+                    Enter your email address and we'll send you a link to reset your password.
+                </div>
+                <div class="input-group">
+                    <label for="resetEmail">Email</label>
+                    <input type="email" id="resetEmail" placeholder="Enter your email">
+                </div>
+                <button class="btn btn-primary" onclick="sendResetEmail()">Send Reset Link</button>
+                <div class="forgot-password">
+                    <a href="#" onclick="showLogin()">Back to Login</a>
+                </div>
+            </div>
+
+            <!-- Update Password Form -->
+            <div class="form update-password-form" id="update-password-form">
+                <h2>Set New Password</h2>
+                <div class="input-group">
+                    <label for="newPassword">New Password</label>
+                    <input type="password" id="newPassword" placeholder="Enter new password">
+                </div>
+                <div class="input-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" id="confirmPassword" placeholder="Confirm new password">
+                </div>
+                <button class="btn btn-primary" onclick="updatePassword()">Update Password</button>
+            </div>
+
+            <div id="message"></div>
+        </div>
+    </div>
+
+    <!-- Success Popup -->
+    <div class="popup" id="success-popup">
+        <div class="popup-content">
+            <h3>Success!</h3>
+            <p id="popup-message">Your action was completed successfully.</p>
+            <button class="popup-btn" onclick="closePopup()">Continue</button>
+        </div>
+    </div>
+
+    <!-- Background Settings Modal -->
+    <div class="bg-modal" id="bg-modal">
+        <div class="bg-modal-content">
+            <h3>Customize Background</h3>
+            <div class="bg-input-group">
+                <label for="bg-url">Background Image URL</label>
+                <input type="text" id="bg-url" placeholder="Enter image URL">
+                <button onclick="previewBackground()"
+                    style="margin-top: 10px; padding: 8px 15px; background: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer;">Preview</button>
+            </div>
+            <div class="bg-preview" id="bg-preview">
+                Preview will appear here
+            </div>
+            <div class="bg-actions">
+                <button class="bg-apply" onclick="applyBackground()">Apply</button>
+                <button class="bg-reset" onclick="resetBackground()">Reset to Default</button>
+                <button class="bg-close" onclick="closeBgModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCNVVecNJejptK-9mxTmY5MnxC-ZWBOZv0",
+            authDomain: "logincodebharar.firebaseapp.com",
+            projectId: "logincodebharar",
+            storageBucket: "logincodebharar.firebasestorage.app",
+            messagingSenderId: "76764593824",
+            appId: "1:76764593824:web:1675b60fd91aa2f133d3c5",
+            measurementId: "G-PG6L6FSKEQ",
+            databaseURL: "https://logincodebharar-default-rtdb.firebaseio.com"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // Default background image
+        const defaultBg = "https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2000&q=80";
+
+        // CAPTCHA state management
+        let loginCaptchaChecked = false;
+        let signupCaptchaChecked = false;
+
+        // Initialize CAPTCHA functionality
+        document.addEventListener('DOMContentLoaded', function () {
+            // Login CAPTCHA
+            document.getElementById('loginCaptcha').addEventListener('click', function () {
+                const box = this.querySelector('.captcha-box');
+                loginCaptchaChecked = !loginCaptchaChecked;
+                box.classList.toggle('checked', loginCaptchaChecked);
+            });
+
+            // Signup CAPTCHA
+            document.getElementById('signupCaptcha').addEventListener('click', function () {
+                const box = this.querySelector('.captcha-box');
+                signupCaptchaChecked = !signupCaptchaChecked;
+                box.classList.toggle('checked', signupCaptchaChecked);
+            });
+
+            // Check for password reset link in URL
+            checkPasswordResetLink();
+
+            // Load saved background if exists
+            loadSavedBackground();
+        });
+
+        // Background functions
+        function openBgModal() {
+            document.getElementById('bg-modal').style.display = 'flex';
+        }
+
+        function closeBgModal() {
+            document.getElementById('bg-modal').style.display = 'none';
+        }
+
+        function previewBackground() {
+            const url = document.getElementById('bg-url').value;
+            if (url) {
+                document.getElementById('bg-preview').style.backgroundImage = `url('${url}')`;
+                document.getElementById('bg-preview').innerHTML = '';
+            }
+        }
+
+        function applyBackground() {
+            const url = document.getElementById('bg-url').value;
+            if (url) {
+                document.body.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('${url}')`;
+                // Save to localStorage
+                localStorage.setItem('farmx-bg', url);
+                closeBgModal();
+                showMessage("Background updated successfully!", "success");
+            } else {
+                showMessage("Please enter a valid image URL", "error");
+            }
+        }
+
+        function resetBackground() {
+            document.body.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('${defaultBg}')`;
+            document.getElementById('bg-url').value = '';
+            document.getElementById('bg-preview').style.backgroundImage = '';
+            document.getElementById('bg-preview').innerHTML = 'Preview will appear here';
+            // Remove from localStorage
+            localStorage.removeItem('farmx-bg');
+            closeBgModal();
+            showMessage("Background reset to default", "success");
+        }
+
+        function loadSavedBackground() {
+            const savedBg = localStorage.getItem('farmx-bg');
+            if (savedBg) {
+                document.body.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('${savedBg}')`;
+                document.getElementById('bg-url').value = savedBg;
+            }
+        }
+
+        // Check if URL contains password reset parameters
+        function checkPasswordResetLink() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const mode = urlParams.get('mode');
+            const oobCode = urlParams.get('oobCode');
+
+            if (mode === 'resetPassword' && oobCode) {
+                // Show update password form
+                document.querySelectorAll('.form').forEach(form => form.classList.remove('active'));
+                document.getElementById('update-password-form').classList.add('active');
+
+                // Update tabs
+                document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+
+                showMessage("Please set your new password", "success");
+            }
+        }
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function () {
+                const tabId = this.getAttribute('data-tab');
+
+                // Update active tab
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                // Show corresponding form
+                document.querySelectorAll('.form').forEach(form => form.classList.remove('active'));
+                document.getElementById(`${tabId}-form`).classList.add('active');
+            });
+        });
+
+        // Show message function
+        function showMessage(msg, type) {
+            const messageBox = document.getElementById("message");
+            messageBox.style.display = "block";
+            messageBox.textContent = msg;
+            messageBox.className = type === "success" ? "success-message" : "error-message";
+
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                messageBox.style.display = "none";
+            }, 5000);
+        }
+
+        // Show popup function
+        function showPopup(message) {
+            document.getElementById("popup-message").textContent = message;
+            document.getElementById("success-popup").style.display = "flex";
+        }
+
+        // Close popup function
+        function closePopup() {
+            document.getElementById("success-popup").style.display = "none";
+        }
+
+        // Show forgot password form
+        function showForgotPassword() {
+            document.querySelectorAll('.form').forEach(form => form.classList.remove('active'));
+            document.getElementById('forgot-password-form').classList.add('active');
+
+            // Update tabs
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+        }
+
+        // Show login form
+        function showLogin() {
+            document.querySelectorAll('.form').forEach(form => form.classList.remove('active'));
+            document.getElementById('login-form').classList.add('active');
+
+            // Update tabs
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector('.tab[data-tab="login"]').classList.add('active');
+        }
+
+        // SIGNUP FUNCTION (Saves data to Realtime DB)
+        function signup() {
+            const name = document.getElementById("signupName").value;
+            const email = document.getElementById("signupEmail").value;
+            const password = document.getElementById("signupPassword").value;
+
+            // Basic validation
+            if (!name || !email || !password) {
+                showMessage("Please fill in all fields", "error");
+                return;
+            }
+
+            // CAPTCHA validation
+            if (!signupCaptchaChecked) {
+                showMessage("Please verify that you are not a robot", "error");
+                return;
+            }
+
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+
+                    // Save user info to Realtime Database
+                    db.ref("users/" + user.uid).set({
+                        name: name,
+                        email: email,
+                        createdAt: new Date().toISOString(),
+                        userType: "farmer"
+                    });
+
+                    showMessage("Account created successfully!", "success");
+                    showPopup("Your account has been created successfully! You can now login.");
+
+                    // Clear form
+                    document.getElementById("signupName").value = "";
+                    document.getElementById("signupEmail").value = "";
+                    document.getElementById("signupPassword").value = "";
+
+                    // Reset CAPTCHA
+                    signupCaptchaChecked = false;
+                    document.querySelector('#signupCaptcha .captcha-box').classList.remove('checked');
+
+                    // Switch to login tab
+                    document.querySelector('.tab[data-tab="login"]').click();
+                })
+                .catch((error) => {
+                    showMessage(error.message, "error");
+                });
+        }
+
+        // LOGIN FUNCTION
+        function login() {
+            const email = document.getElementById("loginEmail").value;
+            const password = document.getElementById("loginPassword").value;
+
+            // Basic validation
+            if (!email || !password) {
+                showMessage("Please fill in all fields", "error");
+                return;
+            }
+
+            // CAPTCHA validation
+            if (!loginCaptchaChecked) {
+                showMessage("Please verify that you are not a robot", "error");
+                return;
+            }
+
+            auth.signInWithEmailAndPassword(email, password)
+                .then(() => {
+                    showPopup("Login successful! Redirecting to dashboard...");
+
+                    // Redirect to dashboard after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = "dashboard.html";
+                    }, 2000);
+                })
+                .catch((error) => {
+                    showMessage(error.message, "error");
+                });
+        }
+
+        // GOOGLE SIGN-IN FUNCTION
+        function googleSignIn() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+
+            auth.signInWithPopup(provider)
+                .then((result) => {
+                    const user = result.user;
+
+                    // Check if user exists in database
+                    db.ref("users/" + user.uid).once('value')
+                        .then((snapshot) => {
+                            if (!snapshot.exists()) {
+                                // Save user info to Realtime Database if new user
+                                db.ref("users/" + user.uid).set({
+                                    name: user.displayName,
+                                    email: user.email,
+                                    createdAt: new Date().toISOString(),
+                                    userType: "farmer"
+                                });
+                            }
+
+                            showPopup("Login successful! Redirecting to dashboard...");
+
+                            // Redirect to dashboard after 2 seconds
+                            setTimeout(() => {
+                                window.location.href = "dashboard.html";
+                            }, 2000);
+                        });
+                })
+                .catch((error) => {
+                    showMessage(error.message, "error");
+                });
+        }
+
+        // SEND RESET EMAIL FUNCTION
+        function sendResetEmail() {
+            const email = document.getElementById("resetEmail").value;
+
+            if (!email) {
+                showMessage("Please enter your email address", "error");
+                return;
+            }
+
+            auth.sendPasswordResetEmail(email)
+                .then(() => {
+                    showMessage("Password reset email sent! Check your inbox.", "success");
+
+                    // Clear form
+                    document.getElementById("resetEmail").value = "";
+
+                    // Switch back to login after 3 seconds
+                    setTimeout(() => {
+                        showLogin();
+                    }, 3000);
+                })
+                .catch((error) => {
+                    showMessage(error.message, "error");
+                });
+        }
+
+        // UPDATE PASSWORD FUNCTION
+        function updatePassword() {
+            const newPassword = document.getElementById("newPassword").value;
+            const confirmPassword = document.getElementById("confirmPassword").value;
+
+            if (!newPassword || !confirmPassword) {
+                showMessage("Please fill in all fields", "error");
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showMessage("Passwords do not match", "error");
+                return;
+            }
+
+            // Get the reset code from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const oobCode = urlParams.get('oobCode');
+
+            // Confirm the password reset code and update password
+            auth.confirmPasswordReset(oobCode, newPassword)
+                .then(() => {
+                    showMessage("Password updated successfully! You can now login with your new password.", "success");
+
+                    // Clear form
+                    document.getElementById("newPassword").value = "";
+                    document.getElementById("confirmPassword").value = "";
+
+                    // Redirect to login after 3 seconds
+                    setTimeout(() => {
+                        // Remove reset parameters from URL
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                        showLogin();
+                    }, 3000);
+                })
+                .catch((error) => {
+                    showMessage(error.message, "error");
+                });
+        }
+
+        // Check if user is already logged in
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // User is signed in, redirect to dashboard
+                window.location.href = "https://pm-luxury-resume-screening-agent.streamlit.app";
+            }
+        });
+    </script>
+</body>
+
+</html>
