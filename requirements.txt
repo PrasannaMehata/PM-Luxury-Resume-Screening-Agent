@@ -1,0 +1,9 @@
+streamlit
+pandas
+PyPDF2
+pdfplumber
+docx2txt
+chromadb
+scikit-learn
+nltk
+requests
