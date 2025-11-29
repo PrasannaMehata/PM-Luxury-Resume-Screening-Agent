@@ -71,7 +71,7 @@ os.environ["GEMINI_API_KEY"] = "enter your api key"
 # check requirements.txt
 
 # ▶ Run the App
-streamlit run rooman.py (run in cmd)
+streamlit run app.py (run in cmd)
 
 
 
