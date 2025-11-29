@@ -4,6 +4,8 @@ A beautiful, animated, premium-design AI resume screening system built with NLP,
 
 Try it out : (https://pm-luxury-resume-screening-agent.streamlit.app/)
 
+* Note : Login/signup page is optional
+
 Features :
 - Resume Processing
 
